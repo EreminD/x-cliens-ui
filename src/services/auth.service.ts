@@ -1,25 +1,21 @@
-import axios, { AxiosError } from 'axios';
 import { TokenStore } from '../stores/token.store';
+import { HttpService } from './http.service';
 
 export class AuthService {
-    private readonly tokenStore: TokenStore;
-
-    constructor() {
+    constructor(private readonly tokenStore: TokenStore, private readonly httpService: HttpService) {
         this.tokenStore = TokenStore.init()
+        this.httpService = new HttpService()
     }
 
     async auth(username: string, password: string) {
-        let response;
-
         try {
-            response = await axios.post('https://x-clients-be.onrender.com/auth/login', { username, password })
-            this.tokenStore.setToken(response.data['userToken'])
-            localStorage.setItem('role', response.data['role'])
+            const body = await this.httpService.post('/auth/login', { username, password })
+            this.tokenStore.setToken(body['userToken'])
+            localStorage.setItem('userinfo', body)
         } catch (err: any) {
-            console.log('failed')
             this.tokenStore.reset();
-            localStorage.removeItem('role')
-            return (err as AxiosError).response?.data
+            localStorage.removeItem('userinfo')
+            throw err
         }
     }
 }
